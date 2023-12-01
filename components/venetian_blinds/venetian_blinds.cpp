@@ -25,6 +25,10 @@ void VenetianBlinds::dump_config() {
   ESP_LOGCONFIG(TAG, "  Tilt: %.1f%", this->tilt);
   ESP_LOGCONFIG(TAG, "  Exact Position: %.1fs", this->exact_position_ / 1e3f);
   ESP_LOGCONFIG(TAG, "  Exact Tilt: %.1fs", this->exact_tilt_ / 1e3f);
+  ESP_LOGCONFIG(TAG, "  Restore Tilts: %s",
+                this->restore_tilt ? "Yes" : "No");
+  ESP_LOGCONFIG(TAG, "  Interlock Duration: %.1fs",
+                this->interlock_duration / 1e3f);
 }
 
 void VenetianBlinds::setup() {
@@ -78,6 +82,7 @@ void VenetianBlinds::control(const CoverCall &call) {
         this->target_tilt_ = 1.0f;
       }
 
+      this->tilt_adjustment_ = this->exact_tilt_;
       this->target_position_ = requested_position * operation_duration;
       this->start_direction_(operation);
     }
@@ -95,8 +100,12 @@ void VenetianBlinds::control(const CoverCall &call) {
 }
 
 void VenetianBlinds::loop() {
-  if (this->current_operation == COVER_OPERATION_IDLE)
+  if (this->current_operation == COVER_OPERATION_IDLE) {
+    if (this->restore_tilt == true) {
+      this->execute_tilt_adjustment_();
+    }
     return;
+  }
 
   const uint32_t now = millis();
 
@@ -167,6 +176,27 @@ void VenetianBlinds::start_direction_(CoverOperation dir) {
   this->stop_prev_trigger_();
   trig->trigger();
   this->prev_command_trigger_ = trig;
+}
+
+void VenetianBlinds::execute_tilt_adjustment_() {
+  if (this->tilt_adjustment_ == -1 ||
+      this->tilt_adjustment_ == this->exact_tilt_) {
+    this->tilt_adjustment_ = -1;
+    return;
+  }
+
+  if (millis() - this->start_dir_time_ <= this->interlock_duration)
+    return;
+
+  this->target_tilt_ = this->tilt_adjustment_;
+  this->target_position_ = this->exact_position_;
+  this->tilt_adjustment_ = -1;
+
+  auto operation = this->last_operation_ == COVER_OPERATION_OPENING
+                       ? COVER_OPERATION_CLOSING
+                       : COVER_OPERATION_OPENING;
+                       
+  this->start_direction_(operation);
 }
 
 void VenetianBlinds::recompute_position_() {

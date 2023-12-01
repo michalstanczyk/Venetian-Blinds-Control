@@ -14,6 +14,8 @@ from esphome.const import (
 
 CONF_TILT_DURATION = "tilt_duration"
 CONF_ACTUATOR_ACTIVATION_DURATION = "actuator_activation_duration"
+CONF_RESTORE_TILT = "restore_tilt"
+CONF_INTERLOCK_DURATION = "interlock_duration"
 
 venetian_blinds_ns = cg.esphome_ns.namespace('venetian_blinds')
 VenetianBlinds = venetian_blinds_ns.class_('VenetianBlinds', cover.Cover, cg.Component)
@@ -28,6 +30,8 @@ CONFIG_SCHEMA = cover.COVER_SCHEMA.extend({
     cv.Required(CONF_TILT_DURATION): cv.positive_time_period_milliseconds,
     cv.Optional(CONF_ACTUATOR_ACTIVATION_DURATION, default="0s"): cv.positive_time_period_milliseconds,
     cv.Optional(CONF_ASSUMED_STATE, default=True): cv.boolean,
+    cv.Optional(CONF_RESTORE_TILT, default=False): cv.boolean,
+    cv.Optional(CONF_INTERLOCK_DURATION, default='0ms'): cv.positive_time_period_milliseconds,
 }).extend(cv.COMPONENT_SCHEMA)
 
 async def to_code(config):
