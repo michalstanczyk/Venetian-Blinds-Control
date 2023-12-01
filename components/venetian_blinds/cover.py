@@ -50,5 +50,7 @@ async def to_code(config):
         var.get_close_trigger(), [], config[CONF_CLOSE_ACTION]
     )
     cg.add(var.set_tilt_duration(config[CONF_TILT_DURATION]))
+    cg.add(var.set_interlock_duration(config[CONF_INTERLOCK_DURATION]))
+    cg.add(var.set_restore_tilt(config[CONF_RESTORE_TILT]))
     cg.add(var.set_actuator_activation_duration(config[CONF_ACTUATOR_ACTIVATION_DURATION]))
     cg.add(var.set_assumed_state(config[CONF_ASSUMED_STATE]))
